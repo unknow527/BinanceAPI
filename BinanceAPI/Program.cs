@@ -11,32 +11,45 @@ class Program
     static async Task Main()
     {
         await SubscribeToTickers(new string[] { "ethusdt", "btcusdt" }, OnTickersUpdate);
+        //await SubscribeToTickers(new string[] { "ethusdt" }, ShowAllData);
     }
 
+    // 訂閱報價
     static async Task SubscribeToTickers(string[] symbols, Action<JObject> onTickersUpdate)
     {
         var ws = new ClientWebSocket();
-        var uri = new Uri($"wss://stream.binance.com:9443/ws/{string.Join("/", symbols)}@ticker");
+        var uri = new Uri($"wss://stream.binance.com:9443/stream?streams={string.Join("/", symbols.Select(s => s + "@ticker"))}");
+        //wss://stream.binance.com:9443/stream?streams=ethusdt@ticker/btcusdt@ticker
 
         await ws.ConnectAsync(uri, CancellationToken.None);
 
-        while (true)
+        var buffer = new byte[1024];
+        var segment = new ArraySegment<byte>(buffer);
+
+        while (ws.State == WebSocketState.Open)
         {
-            var buffer = new byte[1024];
-            var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            var result = await ws.ReceiveAsync(segment, CancellationToken.None);
+
             if (result.MessageType == WebSocketMessageType.Text)
             {
                 var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                var data = JObject.Parse(json);
-                onTickersUpdate(data);
+                var obj = JObject.Parse(json);
+                onTickersUpdate(obj);
             }
         }
     }
 
+    //顯示Json全部資料
+    static void ShowAllData(JObject data)
+    {
+        Console.WriteLine(data);
+    }
+    //報價資料處理
     static void OnTickersUpdate(JObject data)
     {
-        var symbol = data["s"].Value<string>();
-        var price = data["c"].Value<string>();
+        var symbol = data["stream"].Value<string>().Split('@')[0];
+        var price = data["data"]["c"].Value<string>();
         Console.WriteLine($"{symbol}: {price}");
     }
+
 }
