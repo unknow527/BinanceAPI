@@ -47,7 +47,7 @@ class Program
     //報價資料處理
     static void OnTickersUpdate(JObject data)
     {
-        var symbol = data["stream"].Value<string>().Split('@')[0];
+        var symbol = data["data"]["s"].Value<string>();
         var price = data["data"]["c"].Value<string>();
         Console.WriteLine($"{symbol}: {price}");
     }
