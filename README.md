@@ -1,3 +1,3 @@
 # BinanceAPI
-Use websocker to subscribe tickers.
-vs2022  and .net core 6.0
+# Use websocker to subscribe tickers.
+# vs2022  and .net core 6.0
